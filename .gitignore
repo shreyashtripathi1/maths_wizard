@@ -1,0 +1,22 @@
+# Unity generated folders
+Library/
+Logs/
+Temp/
+Obj/
+Build/
+Builds/
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+
+# User-specific settings
+UserSettings/
+
+# Packages lock (optional)
+# Packages/packages-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db

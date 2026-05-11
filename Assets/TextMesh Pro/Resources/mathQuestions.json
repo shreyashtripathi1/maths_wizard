@@ -1,0 +1,230 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+using System;
+using UnityEngine.UI;
+
+public class QuestionManager : MonoBehaviour
+{
+    [Serializable]
+    public class MathQuestion
+    {
+        public string question;
+        public string[] options;
+        public string correct;
+        public int points;
+    }
+
+    private List<MathQuestion> mathQuestions = new List<MathQuestion>();
+
+    public TextMeshProUGUI questionText;
+    public TextMeshProUGUI[] optionTexts;
+
+    public TextMeshProUGUI pointsTextA;
+    public TextMeshProUGUI pointsTextB;
+
+    public TextMeshProUGUI questionStatusA;
+    public TextMeshProUGUI questionStatusB;
+
+    private MathQuestion currentQuestion;
+    private System.Random random = new System.Random();
+
+    private bool questionStarted = false;
+
+    private bool player1CanAnswer = true;
+    private bool player2CanAnswer = true;
+
+    private bool firstAnswerGiven = false;
+    private int firstAnswerPlayer = -1;
+    private bool firstAnswerCorrect = false;
+
+    private int scorePlayer1 = 0;
+    private int scorePlayer2 = 0;
+
+    void Start()
+    {
+        InitHardcodedQuestions();
+        HookLocalButton();
+    }
+
+    void InitHardcodedQuestions()
+    {
+        mathQuestions = new List<MathQuestion>()
+        {
+            new MathQuestion { question = "What is 5 + 3?", options = new[] { "6", "7", "8", "9" }, correct = "8", points = 1 },
+            new MathQuestion { question = "What is 10 - 6?", options = new[] { "5", "4", "3", "6" }, correct = "4", points = 1 },
+            new MathQuestion { question = "What is 2 x 4?", options = new[] { "6", "8", "10", "4" }, correct = "8", points = 1 },
+            new MathQuestion { question = "What is 9 / 3?", options = new[] { "2", "3", "4", "5" }, correct = "3", points = 1 },
+            new MathQuestion { question = "What is 7 + 2?", options = new[] { "10", "8", "9", "7" }, correct = "9", points = 1 },
+            new MathQuestion { question = "What is 6 x 1?", options = new[] { "6", "1", "12", "7" }, correct = "6", points = 1 },
+            new MathQuestion { question = "What is 12 - 5?", options = new[] { "8", "6", "7", "9" }, correct = "7", points = 1 },
+            new MathQuestion { question = "What is 3 x 3?", options = new[] { "6", "9", "3", "12" }, correct = "9", points = 1 },
+            new MathQuestion { question = "What is 4 + 5?", options = new[] { "8", "9", "10", "7" }, correct = "9", points = 1 },
+            new MathQuestion { question = "What is 15 - 10?", options = new[] { "3", "4", "5", "6" }, correct = "5", points = 1 },
+
+            new MathQuestion { question = "What is 8 x 2?", options = new[] { "14", "16", "18", "20" }, correct = "16", points = 2 },
+            new MathQuestion { question = "What is 25 / 5?", options = new[] { "4", "6", "5", "7" }, correct = "5", points = 2 },
+            new MathQuestion { question = "What is 6 x 4?", options = new[] { "24", "20", "22", "18" }, correct = "24", points = 2 },
+            new MathQuestion { question = "What is 100 - 45?", options = new[] { "55", "50", "60", "45" }, correct = "55", points = 2 },
+            new MathQuestion { question = "What is 30 + 25?", options = new[] { "55", "50", "60", "45" }, correct = "55", points = 2 },
+            new MathQuestion { question = "What is 7 x 3?", options = new[] { "21", "24", "18", "27" }, correct = "21", points = 2 },
+            new MathQuestion { question = "What is 64 / 8?", options = new[] { "6", "8", "9", "7" }, correct = "8", points = 2 },
+            new MathQuestion { question = "What is 14 + 9?", options = new[] { "23", "24", "21", "22" }, correct = "23", points = 2 },
+            new MathQuestion { question = "What is 81 / 9?", options = new[] { "8", "9", "7", "6" }, correct = "9", points = 2 },
+            new MathQuestion { question = "What is 11 x 2?", options = new[] { "20", "22", "24", "21" }, correct = "22", points = 2 }
+        };
+    }
+
+    void HookLocalButton()
+    {
+        GameObject localBtn = GameObject.FindGameObjectWithTag("localButton");
+        if (localBtn != null)
+        {
+            Button btn = localBtn.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.onClick.AddListener(() =>
+                {
+                    if (!questionStarted)
+                    {
+                        questionStarted = true;
+                        DisplayRandomQuestion();
+                    }
+                });
+            }
+        }
+    }
+
+    MathQuestion GetRandomQuestion()
+    {
+        if (mathQuestions == null || mathQuestions.Count == 0)
+            return null;
+
+        int index = random.Next(0, mathQuestions.Count);
+        return mathQuestions[index];
+    }
+
+    public void DisplayRandomQuestion()
+    {
+        currentQuestion = GetRandomQuestion();
+
+        if (currentQuestion != null)
+        {
+            questionText.text = currentQuestion.question;
+
+            for (int i = 0; i < optionTexts.Length; i++)
+            {
+                optionTexts[i].text = $"{(char)('A' + i)}. {currentQuestion.options[i]}";
+            }
+
+            player1CanAnswer = true;
+            player2CanAnswer = true;
+
+            firstAnswerGiven = false;
+            firstAnswerPlayer = -1;
+            firstAnswerCorrect = false;
+
+            questionStatusA.text = "";
+            questionStatusB.text = "";
+        }
+    }
+
+    void PlayerAnswered(int playerNumber, int optionIndex)
+    {
+        if (currentQuestion == null) return;
+
+        string chosenAnswer = currentQuestion.options[optionIndex];
+        bool isCorrect = chosenAnswer == currentQuestion.correct;
+
+        if (playerNumber == 1 && player1CanAnswer)
+        {
+            player1CanAnswer = false;
+
+            if (!firstAnswerGiven)
+            {
+                firstAnswerGiven = true;
+                firstAnswerPlayer = 1;
+                firstAnswerCorrect = isCorrect;
+
+                if (isCorrect)
+                {
+                    scorePlayer1 += currentQuestion.points;
+                    pointsTextA.text = $"Player 1 Points: {scorePlayer1}";
+                    questionStatusA.text = "Correct Answer!";
+                    StartCoroutine(NextQuestionAfterDelay(2f));
+                }
+                else
+                {
+                    questionStatusA.text = "Wrong Answer!";
+                }
+            }
+            else
+            {
+                questionStatusA.text = isCorrect ? "Correct Answer!" : "Wrong Answer!";
+                if (isCorrect)
+                {
+                    scorePlayer1 += currentQuestion.points;
+                    pointsTextA.text = $"Player 1 Points: {scorePlayer1}";
+                }
+                StartCoroutine(NextQuestionAfterDelay(2f));
+            }
+        }
+        else if (playerNumber == 2 && player2CanAnswer)
+        {
+            player2CanAnswer = false;
+
+            if (!firstAnswerGiven)
+            {
+                firstAnswerGiven = true;
+                firstAnswerPlayer = 2;
+                firstAnswerCorrect = isCorrect;
+
+                if (isCorrect)
+                {
+                    scorePlayer2 += currentQuestion.points;
+                    pointsTextB.text = $"Player 2 Points: {scorePlayer2}";
+                    questionStatusB.text = "Correct Answer!";
+                    StartCoroutine(NextQuestionAfterDelay(2f));
+                }
+                else
+                {
+                    questionStatusB.text = "Wrong Answer!";
+                }
+            }
+            else
+            {
+                questionStatusB.text = isCorrect ? "Correct Answer!" : "Wrong Answer!";
+                if (isCorrect)
+                {
+                    scorePlayer2 += currentQuestion.points;
+                    pointsTextB.text = $"Player 2 Points: {scorePlayer2}";
+                }
+                StartCoroutine(NextQuestionAfterDelay(2f));
+            }
+        }
+    }
+
+    IEnumerator NextQuestionAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        DisplayRandomQuestion();
+    }
+
+    void Update()
+    {
+        if (!questionStarted) return;
+
+        // Player 1: A, B, C, D
+        if (Input.GetKeyDown(KeyCode.A)) PlayerAnswered(1, 0);
+        if (Input.GetKeyDown(KeyCode.S)) PlayerAnswered(1, 1);
+        if (Input.GetKeyDown(KeyCode.D)) PlayerAnswered(1, 2);
+        if (Input.GetKeyDown(KeyCode.F)) PlayerAnswered(1, 3);
+
+        // Player 2: H, J, K, L
+        if (Input.GetKeyDown(KeyCode.H)) PlayerAnswered(2, 0);
+        if (Input.GetKeyDown(KeyCode.J)) PlayerAnswered(2, 1);
+        if (Input.GetKeyDown(KeyCode.K)) PlayerAnswered(2, 2);
+        if (Input.GetKeyDown(KeyCode.L)) PlayerAnswered(2, 3);
+    }
+}
